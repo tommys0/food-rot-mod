@@ -1,5 +1,6 @@
 {
   "item.foodrotmod.rotten_meat": "Spoiled Meat",
-  "block.foodrotmod.ice_box_chest": "Ice Box Chest"
+  "block.foodrotmod.ice_box": "Ice Box",
+  "container.foodrotmod.ice_box": "Ice Box"
 }
 
