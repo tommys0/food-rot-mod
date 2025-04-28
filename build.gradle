@@ -128,6 +128,25 @@ dependencies {
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0' // Or compatible version
+
+    // Hibernate Core (JPA Implementation)
+    runtimeOnly 'org.hibernate.orm:hibernate-core:6.1.7.Final' // Or compatible version
+
+    // H2 Database (Embedded JDBC Driver - Simple for development/singleplayer)
+    runtimeOnly 'com.h2database:h2:2.1.214' // Or compatible version
+
+    // Required by Hibernate 6+
+    runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:4.0.2' // Or compatible version
+    runtimeOnly 'org.jboss.logging:jboss-logging:3.5.0.Final' // Or compatible version
+    runtimeOnly 'net.bytebuddy:byte-buddy:1.12.18' // Check required version for your Hibernate
+    runtimeOnly 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0' // Or compatible version
+    runtimeOnly 'com.fasterxml:classmate:1.5.1' // Or compatible version
+    // You might need more depending on Hibernate features used
+
+    // SLF4J API (Logging Facade - Hibernate often uses this)
+    runtimeOnly 'org.slf4j:slf4j-api:2.0.7'
+
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}")
