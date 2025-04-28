@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "foodrotmod:block/ice_box" },
+    "facing=south": { "model": "foodrotmod:block/ice_box", "y": 180 },
+    "facing=west":  { "model": "foodrotmod:block/ice_box", "y": 270 },
+    "facing=east":  { "model": "foodrotmod:block/ice_box", "y": 90 }
+  }
+}
