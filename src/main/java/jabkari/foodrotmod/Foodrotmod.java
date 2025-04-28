@@ -1,70 +1,86 @@
 package jabkari.foodrotmod;
 
 import com.mojang.logging.LogUtils;
+import jabkari.foodrotmod.client.IceBoxScreen;
+import jabkari.foodrotmod.db.DatabaseService;
 import jabkari.foodrotmod.registry.ModBlocks;
-import net.minecraft.world.level.block.Block;
+import jabkari.foodrotmod.registry.ModBlockEntities;
+import jabkari.foodrotmod.registry.ModItems;
+import jabkari.foodrotmod.registry.ModMenuTypes;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraft.world.item.Item;
-import jabkari.foodrotmod.registry.ModItems;
+import org.slf4j.Logger;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(Foodrotmod.MOD_ID)
-public class Foodrotmod
-{
-    // Define a mod id in the common_registry, used to identify your mod in resources
+public class Foodrotmod {
     public static final String MOD_ID = "foodrotmod";
+    private static final Logger LOGGER = LogUtils.getLogger();
 
-    // Create a Deferred Register to hold Items
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
-
-    // Create the main constructor for registering the mod
-    public Foodrotmod()
-    {
+    public Foodrotmod() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        modEventBus.register(this);
 
-        // Registering items to mod's deferred register
-        ModItems.ITEMS.register(modEventBus);
-        ModBlocks.BLOCKS.register(modEventBus);
+        // Register all registries to the mod event bus
+        ModItems.register(modEventBus);
+        ModBlocks.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
+        ModMenuTypes.register(modEventBus);
 
-        // Register the commonSetup method for modloading
+        MinecraftForge.EVENT_BUS.register(this);
         modEventBus.addListener(this::commonSetup);
-
-        // Register the item registry
-        ITEMS.register(modEventBus);
-        BLOCKS.register(modEventBus);
     }
 
-    // This method will execute during the commonSetup phase
-    private void commonSetup(final FMLCommonSetupEvent event)
-    {
-        // Some common setup code
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        LOGGER.info("Initializing.");
+        if (Config.logDirtBlock) {
+            LOGGER.info("DIRT BLOCK >> {}", net.minecraft.world.level.block.Blocks.DIRT.getDescriptionId());
+        }
+        Config.onLoad(null); // Manually trigger config load
+        LOGGER.info("Magic number: {}", Config.magicNumber);
+        LOGGER.info("{}", Config.magicNumberIntroduction);
+
+        event.enqueueWork(() -> {
+            DatabaseService.initialize();
+        });
     }
 
-    // Used for initializing mod-specific setups
-    public void onServerStarting(ServerStartingEvent event)
-    {
-        // This method is called when the server starts
-        LogUtils.getLogger().info("Foodrotmod is starting up!");
-    }
-
-    // Used for client setup
-    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
-    public static void onClientSetup(final FMLClientSetupEvent event)
-    {
-        // Some client setup code
-        LogUtils.getLogger().info("Foodrotmod is starting on the client!");
+    public void onServerStarting(ServerStartingEvent event) {
+        LOGGER.info("Server Starting.");
+    }
+
+    @SubscribeEvent
+    public void onServerStopping(ServerStoppingEvent event) {
+        LOGGER.info("{} Server Stopping, shutting down DatabaseService...", MOD_ID);
+        DatabaseService.shutdown();
+    }
+
+    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static class ClientModEvents {
+        @SubscribeEvent
+        public static void onClientSetup(FMLClientSetupEvent event) {
+            LOGGER.info("Starting Client Setup for {}", MOD_ID);
+            event.enqueueWork(() -> {
+                MenuScreens.register(ModMenuTypes.ICE_BOX_MENU.get(), IceBoxScreen::new);
+                LOGGER.info("Registered GUI Screens for {}", MOD_ID);
+            });
+        }
+    }
+
+    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+    public static class ModEventBusEvents {
+        @SubscribeEvent
+        public static void addCreative(BuildCreativeModeTabContentsEvent event) {
+            ModItems.addCreative(event);
+        }
     }
 }
